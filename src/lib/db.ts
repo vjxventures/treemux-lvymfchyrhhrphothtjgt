@@ -1,7 +1,12 @@
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
-const DB_PATH = path.join(process.cwd(), "miggoo.db");
+// Use /tmp on Vercel (read-only filesystem), otherwise local
+const isVercel = process.env.VERCEL === "1";
+const DB_PATH = isVercel
+  ? "/tmp/miggoo.db"
+  : path.join(process.cwd(), "miggoo.db");
 
 let db: Database.Database | null = null;
 
