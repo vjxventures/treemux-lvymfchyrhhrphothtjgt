@@ -10,7 +10,7 @@ import { HappeningBanner } from "./happening-banner";
 import { LoginModal } from "./login-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 const MapView = dynamic(() => import("./map-view").then((m) => ({ default: m.MapView })), {
   ssr: false,
@@ -298,7 +298,10 @@ export function MiggooApp() {
         <SheetContent
           side="bottom"
           className="rounded-t-3xl max-h-[85vh] p-0 border-t border-border/60"
+          showCloseButton={false}
         >
+          <SheetTitle className="sr-only">Event Details</SheetTitle>
+          <SheetDescription className="sr-only">View event details, RSVP, and chat</SheetDescription>
           <div className="w-10 h-1 rounded-full bg-border mx-auto mt-3" />
           {selectedEvent && (
             <EventDetail
@@ -316,7 +319,10 @@ export function MiggooApp() {
         <SheetContent
           side="bottom"
           className="rounded-t-3xl max-h-[90vh] p-0 border-t border-border/60"
+          showCloseButton={false}
         >
+          <SheetTitle className="sr-only">Create Event</SheetTitle>
+          <SheetDescription className="sr-only">Create a new event on campus</SheetDescription>
           <div className="w-10 h-1 rounded-full bg-border mx-auto mt-3" />
           <CreateEvent
             onClose={() => setShowCreateEvent(false)}
