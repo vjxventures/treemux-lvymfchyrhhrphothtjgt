@@ -1,52 +1,56 @@
 import { cookies } from "next/headers";
-import { getDb } from "./db";
+import { getStore, now } from "./db";
+import type { UserRow } from "./db";
 import { v4 as uuid } from "uuid";
+import { ensureSeeded } from "./seed";
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string | null;
-  university: string;
-  campus: string;
-  bio: string;
-  role: "student" | "ambassador" | "admin";
-  verified: number;
-  created_at: string;
-  last_active: string;
-}
+export type User = UserRow;
 
 const SESSION_COOKIE = "miggoo_session";
 
 export async function getCurrentUser(): Promise<User | null> {
+  ensureSeeded();
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionId) return null;
 
-  const db = getDb();
-  const user = db
-    .prepare("SELECT * FROM users WHERE id = ?")
-    .get(sessionId) as User | undefined;
-
+  const store = getStore();
+  const user = store.users.get(sessionId);
   if (user) {
-    db.prepare("UPDATE users SET last_active = datetime('now') WHERE id = ?").run(
-      user.id
-    );
+    user.last_active = now();
   }
   return user || null;
 }
 
 export async function signIn(email: string, name: string, university: string, campus: string): Promise<User> {
-  const db = getDb();
-  let user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as User | undefined;
+  ensureSeeded();
+  const store = getStore();
+  let user: User | undefined;
+
+  for (const u of store.users.values()) {
+    if (u.email === email) {
+      user = u;
+      break;
+    }
+  }
 
   if (!user) {
     const id = uuid();
     const avatarIdx = Math.floor(Math.random() * 8) + 1;
-    db.prepare(
-      `INSERT INTO users (id, email, name, university, campus, avatar_url) VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(id, email, name, university, campus, `/avatars/${avatarIdx}.svg`);
-    user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as User;
+    user = {
+      id,
+      email,
+      name,
+      avatar_url: `/avatars/${avatarIdx}.svg`,
+      university,
+      campus,
+      bio: "",
+      role: "student",
+      verified: 0,
+      created_at: now(),
+      last_active: now(),
+    };
+    store.users.set(id, user);
   }
 
   const cookieStore = await cookies();
